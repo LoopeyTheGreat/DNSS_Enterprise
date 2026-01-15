@@ -1,0 +1,51 @@
+# DNSS Enterprise Configuration File
+# This file can be manually edited, but settings may be overridden by the application
+# Note: Environment variables take precedence over settings in this file
+
+# Cron schedule for automatic DNS updates (default: every 10 minutes)
+# Format: minute hour day month day-of-week
+# Examples:
+#   "*/10 * * * *" = every 10 minutes
+#   "*/30 * * * *" = every 30 minutes
+#   "0 */1 * * *" = hourly
+#   "0 */6 * * *" = every 6 hours
+cron_schedule: "*/10 * * * *"
+
+# Wildcard DNS record management
+wildcard_dns:
+  # Enable automatic synchronization of wildcard records with root domain
+  sync_with_root: true
+  # Apply same proxy settings as root domain (true/false)
+  match_proxy_settings: true
+  # Override TTL for wildcard records (leave empty to match root domain TTLl)
+  ttl_override: 
+
+# Notifications
+notifications:
+  # Discord webhook for notifications
+  # Note: The DISCORD_WEBHOOK_URL environment variable will override this setting if present
+  discord:
+    enabled: true
+    webhook_url: ""  # Leave empty if using environment variable (recommended)
+    # Events to trigger notifications
+    events:
+      ip_changed: true
+      update_success: true
+      update_failure: true
+      root_wildcard_mismatch: true
+
+# IPv6 Settings
+ipv6:
+  enabled: false  # Set to true to enable IPv6 address updates
+
+# API Services for IP detection (in order of preference)
+ip_detection_services:
+  - "https://api.ipify.org"
+  - "https://ifconfig.me/ip"
+  - "https://icanhazip.com"
+
+# Logging settings
+logging:
+  level: "DEBUG"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  max_size_mb: 5
+  backup_count: 3

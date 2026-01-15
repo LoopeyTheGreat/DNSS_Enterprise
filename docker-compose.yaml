@@ -1,0 +1,66 @@
+services:
+  # Main service for DNS updating and SSH access - the SSH interface is optional
+  # but included here for manual management when needed
+  dnss_enterprise:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dnss_enterprise
+    ports:
+      - "1701:22"  # SSH port for CLI access (Star Trek reference: NCC-1701)
+    env_file:
+      - .env
+    volumes:
+      - ./.env:/app/.env:ro       # Mount the .env file directly (read-only)
+      - ./logs:/app/logs          # Persistent logs directory
+      - ./config:/app/config      # Persistent configuration
+      - ./ssh_keys:/ssh_keys:ro   # Mount SSH public keys (read-only)
+    environment:
+      # Optional environment variables will override config file settings
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}  # Discord webhook for notifications
+    tty: true          # Required for interactive CLI
+    stdin_open: true   # Required for interactive CLI
+    restart: unless-stopped
+    networks:
+      - dnss_network
+  
+  # Core service for running scheduled IP updates - this service handles
+  # the actual DNS updating functionality without any SSH interface
+  starfleet_comms_refresh:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dnss_enterprise_cron
+    entrypoint: ["/app/cron_setup.sh"]
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/app/logs         # Persistent logs directory
+      - ./config:/app/config     # Persistent configuration
+    restart: unless-stopped
+    networks:
+      - dnss_network
+
+# Define a dedicated network for DNSS Enterprise services
+networks:
+  dnss_network:
+    driver: bridge
+
+#
+# CONFIGURATION HELP:
+#
+# The update schedule is configured in config/config.yaml
+# To change the schedule, edit the "cron_schedule" value in the config file.
+# Default is "*/10 * * * *" (every 10 minutes)
+# 
+# CRON FORMAT: minute hour day month day-of-week
+# Example: '*/10 * * * *' means every 10 minutes
+#
+# Common examples:
+#   * * * * *     - every minute
+#   */5 * * * *   - every 5 minutes
+#   0 * * * *     - every hour at minute 0
+#   0 0 * * *     - every day at midnight
+#   0 8 * * 1     - every Monday at 8:00 AM
+#
+# For help with cron scheduling, see: https://crontab.guru/

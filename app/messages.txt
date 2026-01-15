@@ -1,0 +1,95 @@
+# welcome messages
+
+1.
+🚀 "Welcome to dnss_enterprise: boldly resolving where no DNS has resolved before!"
+
+2.
+🖖 "DNS shields up. Ready to intercept rogue IP packets, Captain!"
+
+3.
+🛸 "You have entered the Neutral Zone of DNS. Proceed with humor and caution."
+
+4.
+🖥️ "Engage! DNS warp engines at full — expect occasional anomalies."
+
+5.
+👨‍🔬 "Dr. McCoy here: I'm a doctor, not a DNS server! Oh wait... never mind."
+
+6.
+🖖 "Klingon proverb: 'Only a fool enters battle without verifying his DNS entries.'"
+
+7.
+🚨 "Red alert! Someone requested an A record. All hands to their keyboards!"
+
+8.
+📡 "Resistance is futile. Your DNS queries will be answered."
+
+9.
+🪐 "Welcome to dnss_enterprise. Infinite diversity in infinite IP addresses."
+
+10.
+👨‍🚀 "Scotty: 'She cannae take much more, Captain... these DNS queries are going to blow the nacelles!'"
+
+11.
+🛠️ "Q just dropped by. He said your PTR records are 'quaint' but will allow them... for now."
+
+12.
+🖖 "Worf: 'If DNS fails, today is a good day to die.'"
+
+13.
+🛸 "You are now accessing DNS... powered by dilithium crystals and caffeine."
+
+14.
+👩‍💻 "Lt. Uhura here. Your DNS transmission is clear — but seriously, fix your reverse lookups."
+
+15.
+🖖 "dnss_enterprise reporting for duty! Phasers set to 'resolve.'"
+
+
+# exit messages 
+
+1.
+🖖 "dnss_enterprise signing off. May your packets find their destinations — unlike Voyager."
+
+2.
+🚀 "Warp core shutting down... DNS entries secured. No tribbles detected."
+
+3.
+🛸 "Mission complete. Returning to Starfleet Command for debriefing and tacos."
+
+4.
+👨‍🚀 "Engines offline. If anything breaks, just blame Wesley."
+
+5.
+🖥️ "Session terminated. DNS server going into stasis — snore sounds intensify."
+
+6.
+🚨 "All decks report: DNS stable. Shields down. Time for Raktajino."
+
+7.
+🛠️ "Mr. Scott says, 'I gave her all she's got, Captain!' Shutting down before she really blows."
+
+8.
+👾 "Borg transmission ended. We have temporarily ceased assimilation... for now."
+
+9.
+🛸 "Another DNS mission accomplished. Somewhere, a Romulan cries softly."
+
+10.
+🖖 "dnss_enterprise: 'Computer, end program.' Holodeck fantasy over."
+
+11.
+📡 "*Goodbye, Starfleet cadet. Your DNS training is... adequate."
+
+12.
+👨‍⚕️ "Dr. McCoy: 'I'm a doctor, not a sysadmin! Thank Kahless we're done.'"
+
+13.
+🚀 "Impulse engines engaged. Gliding gracefully into maintenance mode."
+
+14.
+🛸 "Your DNS session has concluded. Recommend two shots of Romulan Ale and a nap."
+
+15.
+🖥️ "Final log entry: DNS resolved. Morale high. Klingons moderately appeased."
+

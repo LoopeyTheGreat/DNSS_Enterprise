@@ -1,0 +1,36 @@
+name: Docker Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up example SSH key for testing
+        run: |
+          mkdir -p ssh_keys
+          touch ssh_keys/example_test.pub
+          echo "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAaGO4LnJ7kmNPFxJScDDnUJZ2XcvXJrBxEu2QJ4xFQf example_test_key" > ssh_keys/example_test.pub
+      
+      - name: Set up example config files
+        run: |
+          cp .env.example .env
+          mkdir -p config
+          cp config/config.yaml.example config/config.yaml
+          
+      - name: Build the Docker image
+        run: docker compose build
+        
+      - name: Test container startup
+        run: |
+          docker compose up -d
+          sleep 5
+          docker compose ps
+          docker compose logs
+          docker compose down

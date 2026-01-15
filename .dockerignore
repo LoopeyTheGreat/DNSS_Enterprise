@@ -1,0 +1,22 @@
+# Git files
+.git
+.github
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# Environment variables
+.env*
+!.env.example
+
+# SSH keys (should be added by the user)
+ssh_keys/*
+!ssh_keys/README.md
+
+# Other files not needed in the Docker image
+README.md
+LICENSE
+examples/
+.dockerignore
