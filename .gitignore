@@ -1,6 +1,9 @@
 # Environment variables - contain sensitive API keys
 .env
 
+# Configuration files with sensitive data
+/config/config.yaml
+
 # Logs
 logs/
 *.log
