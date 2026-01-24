@@ -669,7 +669,7 @@ def show_update_schedule():
     print("*/10 * * * *  = every 10 minutes")
     print("0 */1 * * *   = every hour at minute 0")
     print("0 0 * * *     = every day at midnight")
-      input("\nPress Enter to continue...")
+    input("\nPress Enter to continue...")
 
 def captain_log_viewer():
     """Advanced log viewing system with filtering and search capabilities"""
@@ -1284,7 +1284,7 @@ def improve_dns_status_display():
     all_good = True
     
     for domain, api_key in pairs:
-        domain_logger = get_domain_logger(domain)
+        domain_logger = get_domain_logger("picard", domain)
         log.info(f"Checking status for domain {domain}")
         domain_logger.info(f"Checking status for domain {domain}")
         
@@ -1446,7 +1446,8 @@ def main():
         elif command in ["3", "update single"]:
             update_single_record()
         elif command in ["4", "tools", "network", "network tools"]:
-            network_tools_menu()        elif command in ["5", "schedule", "show schedule"]:
+            network_tools_menu()
+        elif command in ["5", "schedule", "show schedule"]:
             show_update_schedule()
         elif command in ["6", "modify schedule", "change schedule"]:
             print("🚧 Modify update schedule: (Not yet implemented)")

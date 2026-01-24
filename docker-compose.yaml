@@ -9,39 +9,7 @@ services:
     ports:
       - "1701:22"  # SSH port for CLI access (Star Trek reference: NCC-1701)
     env_file:
-      - .env
-    volumes:
-      - ./.env:/app/.env:ro       # Mount the .env file directly (read-only)
-      - ./logs:/app/logs          # Persistent logs directory
-      - ./config:/app/config      # Persistent configuration
-      - ./ssh_keys:/ssh_keys:ro   # Mount SSH public keys (read-only)
-    environment:
-      # Optional environment variables will override config file settings
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}  # Discord webhook for notifications
-    tty: true          # Required for interactive CLI
-    stdin_open: true   # Required for interactive CLI
-    restart: unless-stopped
-    networks:
-      - dnss_network
-  
-  # Core service for running scheduled IP updates - this service handles
-  # the actual DNS updating functionality without any SSH interface
-  starfleet_comms_refresh:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: dnss_enterprise_cron
-    entrypoint: ["/app/cron_setup.sh"]
-    env_file:
-      - .env
-    volumes:
-      - ./logs:/app/logs         # Persistent logs directory
-      - ./config:/app/config     # Persistent configuration
-    restart: unless-stopped
-    networks:
-      - dnss_network
-
-# Define a dedicated network for DNSS Enterprise services
+      - .enva
 networks:
   dnss_network:
     driver: bridge

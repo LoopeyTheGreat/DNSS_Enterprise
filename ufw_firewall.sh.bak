@@ -1,0 +1,219 @@
+#!/bin/bash
+
+# UFW Firewall Rule Script for DNSS Enterprise
+# Adds a specific rule to allow connections from LAN subnet to port 1701 (TCP)
+# Does NOT modify default firewall policies
+# Author: DNSS Enterprise
+# Date: $(date)
+
+set -e  # Exit on any error
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Logging function
+log() {
+    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+}
+
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Check if running as root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        error "This script must be run as root (use sudo)"
+        exit 1
+    fi
+}
+
+# Check if UFW is installed
+check_ufw() {
+    if ! command -v ufw &> /dev/null; then
+        error "UFW is not installed. Please install it first:"
+        echo "  Ubuntu/Debian: sudo apt install ufw"
+        echo "  CentOS/RHEL: sudo yum install ufw"
+        exit 1
+    fi
+}
+
+# Detect LAN subnet
+detect_lan_subnet() {
+    log "Detecting LAN subnet..."
+    
+    # Get the default route interface
+    DEFAULT_INTERFACE=$(ip route | grep '^default' | awk '{print $5}' | head -n1)
+    
+    if [[ -z "$DEFAULT_INTERFACE" ]]; then
+        error "Could not detect default network interface"
+        exit 1
+    fi
+    
+    log "Default interface: $DEFAULT_INTERFACE"
+    
+    # Method 1: Try to get from routing table for private networks
+    LAN_SUBNET=$(ip route | grep "$DEFAULT_INTERFACE" | grep -E '(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)' | grep -v 'default' | awk '{print $1}' | head -n1)
+    
+    # Method 2: Get from interface IP address if method 1 fails
+    if [[ -z "$LAN_SUBNET" ]]; then
+        IP_WITH_CIDR=$(ip addr show "$DEFAULT_INTERFACE" | grep 'inet ' | awk '{print $2}' | grep -E '(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.)' | head -n1)
+        if [[ -n "$IP_WITH_CIDR" ]]; then
+            # Extract network from IP/CIDR using simple calculation
+            IP=$(echo "$IP_WITH_CIDR" | cut -d'/' -f1)
+            CIDR=$(echo "$IP_WITH_CIDR" | cut -d'/' -f2)
+            
+            # Use ipcalc if available, otherwise use common subnet assumptions
+            if command -v ipcalc >/dev/null 2>&1; then
+                LAN_SUBNET=$(ipcalc "$IP_WITH_CIDR" | grep 'Network:' | awk '{print $2}' 2>/dev/null)
+            elif command -v ipcalc-ng >/dev/null 2>&1; then
+                LAN_SUBNET=$(ipcalc-ng "$IP_WITH_CIDR" --network 2>/dev/null | head -n1)
+            fi
+            
+            # Fallback for common subnet sizes if ipcalc not available
+            if [[ -z "$LAN_SUBNET" ]]; then
+                case "$CIDR" in
+                    24) LAN_SUBNET=$(echo "$IP" | sed 's/\([0-9]*\.[0-9]*\.[0-9]*\)\.[0-9]*/\1.0\/24/') ;;
+                    16) LAN_SUBNET=$(echo "$IP" | sed 's/\([0-9]*\.[0-9]*\)\.[0-9]*\.[0-9]*/\1.0.0\/16/') ;;
+                    8) LAN_SUBNET=$(echo "$IP" | sed 's/\([0-9]*\)\.[0-9]*\.[0-9]*\.[0-9]*/\1.0.0.0\/8/') ;;
+                    *) LAN_SUBNET="$IP_WITH_CIDR" ;;
+                esac
+            fi
+        fi
+    fi
+    
+    # Method 3: Manual input if auto-detection fails
+    if [[ -z "$LAN_SUBNET" || "$LAN_SUBNET" == "default" ]]; then
+        warning "Could not automatically detect LAN subnet"
+        echo "Common LAN subnets:"
+        echo "  - 192.168.1.0/24 (most common home routers)"
+        echo "  - 192.168.0.0/24 (common home routers)"
+        echo "  - 10.0.0.0/24 (some routers)"
+        echo "  - 172.16.0.0/16 (enterprise networks)"
+        echo
+        read -p "Please enter your LAN subnet (e.g., 192.168.1.0/24): " LAN_SUBNET
+        
+        if [[ -z "$LAN_SUBNET" ]]; then
+            error "No subnet provided. Exiting."
+            exit 1
+        fi
+    fi
+    
+    # Validate the subnet format
+    if [[ ! "$LAN_SUBNET" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/[0-9]{1,2}$ ]]; then
+        error "Invalid subnet format: $LAN_SUBNET"
+        error "Expected format: x.x.x.x/xx (e.g., 192.168.1.0/24)"
+        exit 1
+    fi
+    
+    log "Detected LAN subnet: $LAN_SUBNET"
+}
+
+# Configure UFW rules
+configure_firewall() {
+    log "Configuring UFW firewall rules..."
+    
+    # Enable UFW if not already enabled
+    log "Enabling UFW..."
+    ufw --force enable
+    
+    # Check if rule already exists to avoid duplicates
+    log "Checking for existing rules..."
+    EXISTING_RULE=$(ufw status numbered | grep "$LAN_SUBNET.*1701" || true)
+    
+    if [[ -n "$EXISTING_RULE" ]]; then
+        warning "Rule for $LAN_SUBNET to port 1701 already exists:"
+        echo "$EXISTING_RULE"
+        log "Skipping rule creation."
+    else
+        # Allow connections from LAN subnet to port 1701 TCP (main requirement)
+        log "Adding rule: Allow TCP connections from $LAN_SUBNET to port 1701..."
+        ufw allow from "$LAN_SUBNET" to any port 1701 proto tcp
+        
+        if [[ $? -eq 0 ]]; then
+            success "Successfully added firewall rule for LAN subnet access to port 1701"
+        else
+            error "Failed to add firewall rule"
+            exit 1
+        fi
+    fi
+    
+    # Show status
+    log "Current UFW status:"
+    ufw status numbered
+}
+
+# Backup existing UFW rules
+backup_rules() {
+    BACKUP_DIR="/etc/ufw/backup"
+    BACKUP_FILE="$BACKUP_DIR/ufw_rules_backup_$(date +%Y%m%d_%H%M%S).tar.gz"
+    
+    log "Creating backup of existing UFW rules..."
+    mkdir -p "$BACKUP_DIR"
+    
+    if [[ -d "/etc/ufw" ]]; then
+        tar -czf "$BACKUP_FILE" -C /etc ufw/ 2>/dev/null || warning "Could not create backup"
+        if [[ -f "$BACKUP_FILE" ]]; then
+            success "Backup created: $BACKUP_FILE"
+        fi
+    fi
+}
+
+# Main function
+main() {
+    log "Starting UFW Firewall Rule Addition for DNSS Enterprise"
+    log "This script will add a rule to allow LAN subnet access to port 1701 (TCP)"
+    echo
+    
+    # Checks
+    check_root
+    check_ufw
+    
+    # Create backup
+    backup_rules
+    
+    # Detect network
+    detect_lan_subnet
+    
+    # Confirm with user
+    echo
+    warning "About to add firewall rule with the following settings:"
+    echo "  - LAN Subnet: $LAN_SUBNET"
+    echo "  - Allow port: 1701 (TCP only)"
+    echo "  - Action: Add specific rule only (no default policy changes)"
+    echo
+    read -p "Do you want to continue? (y/N): " -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        log "Operation cancelled by user"
+        exit 0
+    fi
+    
+    # Configure firewall
+    configure_firewall
+    
+    echo
+    success "UFW firewall rule added successfully!"
+    success "Port 1701 (TCP) is now accessible from LAN subnet: $LAN_SUBNET"
+    
+    log "Useful commands:"
+    echo "  Add another subnet: sudo ufw allow from <subnet> to any port 1701 proto tcp"
+    echo "  Remove this rule: sudo ufw delete allow from $LAN_SUBNET to any port 1701 proto tcp"
+    echo "  Check firewall status: sudo ufw status numbered"
+}
+
+# Run main function
+main "$@"

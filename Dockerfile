@@ -1,9 +1,9 @@
-FROM python:3.11-slim
+FROM python:3.12-slim-bookworm
 
 WORKDIR /app
 
-# Install supervisor, cron, SSH server, and network tools
-RUN apt-get update && apt-get install -y \
+# Install supervisor, cron, SSH server, network tools, and locales in a single layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
     cron \
     openssh-server \
@@ -14,8 +14,16 @@ RUN apt-get update && apt-get install -y \
     curl \
     wget \
     iperf3 \
+    locales \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/sshd
+
+# Generate and configure locale to fix setlocale warnings
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 # Ensure crontab directory exists and has correct permissions for cron jobs
 RUN mkdir -p /var/spool/cron/crontabs \
@@ -49,14 +57,8 @@ RUN echo '#!/bin/bash' > /app/.profile && \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files from the app directory
-COPY app/update_cloudflare_ip.py /app/
-COPY app/picard.py /app/
-COPY app/logger.py /app/
-COPY app/config_manager.py /app/
-COPY app/notify.py /app/
-
-# Copy cron setup script
+# App files will be mounted via docker-compose volumes for faster development
+# Only copy cron setup script which needs to be executable at build time
 COPY cron_setup.sh /app/
 RUN chmod +x /app/cron_setup.sh
 
@@ -90,17 +92,14 @@ RUN echo '#!/bin/bash' > /app/.bashrc && \
     echo 'echo "Starfleet DNS Console is ready."' >> /app/.bashrc && \
     echo 'if [[ -n $SSH_CONNECTION ]]; then' >> /app/.bashrc && \
     echo '  # When connecting via SSH, auto-launch picard.py' >> /app/.bashrc && \
-    echo '  python /app/picard.py' >> /app/.bashrc && \
+    echo '  python /app/app/picard.py' >> /app/.bashrc && \
     echo '  # Exit SSH session when picard.py exits' >> /app/.bashrc && \
     echo '  exit' >> /app/.bashrc && \
     echo 'else' >> /app/.bashrc && \
-    echo '  echo "Type ./picard.py to launch the Starfleet DNS Console"' >> /app/.bashrc && \
+    echo '  echo "Type python /app/app/picard.py to launch the Starfleet DNS Console"' >> /app/.bashrc && \
     echo 'fi' >> /app/.bashrc && \
     chown starfleet:starfleet /app/.bashrc && \
     chmod 644 /app/.bashrc
-
-# Make picard.py executable
-RUN chmod +x /app/picard.py
 
 # Create SSH environment file (correctly placed in .ssh directory)
 RUN echo "TERM=xterm-256color" > /app/.ssh/environment && \
