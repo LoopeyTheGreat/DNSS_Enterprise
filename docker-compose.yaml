@@ -9,7 +9,13 @@ services:
     ports:
       - "1701:22"  # SSH port for CLI access (Star Trek reference: NCC-1701)
     env_file:
-      - .enva
+      - .env
+    volumes:
+      - ./app:/app/app
+      - ./config:/app/config
+      - ./logs:/app/logs
+      - ./.env:/app/.env:ro
+      - ./ssh_keys:/ssh_keys:ro
 networks:
   dnss_network:
     driver: bridge

@@ -57,8 +57,11 @@ RUN echo '#!/bin/bash' > /app/.profile && \
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# App files will be mounted via docker-compose volumes for faster development
-# Only copy cron setup script which needs to be executable at build time
+# Copy application and configuration files so the container works even without bind mounts
+COPY app /app/app
+COPY config /app/config
+
+# Copy cron setup script and ensure it is executable
 COPY cron_setup.sh /app/
 RUN chmod +x /app/cron_setup.sh
 
