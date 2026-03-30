@@ -16,6 +16,7 @@ services:
       - ./logs:/app/logs
       - ./.env:/app/.env:ro
       - ./ssh_keys:/ssh_keys:ro
+    restart: unless-stopped
 networks:
   dnss_network:
     driver: bridge
